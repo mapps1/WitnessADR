@@ -1,0 +1,182 @@
+# WitnessADR — Full Content Index
+
+> WitnessADR is an open-source (Apache 2.0) Python library for tamper-evident AI agent decision logging. It records every consequential agent decision as a cryptographically hash-chained, Ed25519-signed Agent Decision Record (ADR) that any third party can independently verify with only read access. No vendor trust, no telemetry, fully self-hosted.
+
+---
+
+## What WitnessADR Does
+
+WitnessADR records AI agent decisions as a hash-chained audit log. Each entry:
+- Commits to the SHA-256 hash of the previous entry (tamper chain)
+- Is optionally signed with an Ed25519 key (prove who wrote it)
+- Stores only the hash of input context by default (privacy-safe for regulated data)
+- Can be independently verified by any third party with only read access
+
+It differs from observability tools (Langfuse, LangSmith) in purpose: those tools help developers debug and understand agent behavior; WitnessADR produces compliance evidence that satisfies external audit requirements.
+
+---
+
+## Installation
+
+```
+pip install witnessadr-storage-sqlite    # core + SQLite storage
+pip install witnessadr-cli               # adds witnessadr CLI
+pip install "witnessadr-adapter-langchain[langchain]"  # LangChain adapter
+pip install witnessadr-adapter-openai    # OpenAI adapter
+```
+
+---
+
+## Quick Start
+
+```python
+from witnessadr_core.signing import generate_keypair
+from witnessadr_storage_sqlite import WitnessADRStore
+
+private_key, public_key = generate_keypair()
+store = WitnessADRStore("audit.db")
+
+store.append(
+    session_id="session-001",
+    agent_id="my-agent-v1",
+    actor={"type": "model", "model": "claude-sonnet-4"},
+    decision_type="tool_call",
+    action={"description": "Search policy docs", "tool_name": "search"},
+    outcome="Found 3 documents",
+    input_context_hash="sha256:" + "a" * 64,
+    retention_class="eu_ai_act_high_risk",
+    private_key_bytes=private_key,
+)
+
+result = store.verify("session-001", public_key_bytes=public_key)
+print(result)  # PASS — 1 entries verified
+```
+
+---
+
+## LangChain Integration
+
+```python
+from witnessadr_storage_sqlite import WitnessADRStore
+from witnessadr_adapter_langchain import WitnessADRCallbackHandler
+
+store = WitnessADRStore("audit.db")
+handler = WitnessADRCallbackHandler(store, session_id="session-001")
+chain.invoke({"input": "..."}, config={"callbacks": [handler]})
+```
+
+Callback mapping: `on_llm_end` → `reasoning_step` entry; `on_tool_end` → `tool_call` entry; `on_chain_error` → `escalation` entry.
+
+---
+
+## OpenAI Integration
+
+```python
+import openai
+from witnessadr_adapter_openai import WitnessADROpenAI
+from witnessadr_storage_sqlite import WitnessADRStore
+
+store = WitnessADRStore("audit.db")
+client = WitnessADROpenAI(openai.OpenAI(), store, session_id="session-001")
+response = client.chat("gpt-4o", messages=[...])  # returns raw ChatCompletion
+```
+
+---
+
+## CLI
+
+```bash
+witnessadr init audit.db               # create store + Ed25519 keypair
+witnessadr verify audit.db session-001 --public-key witnessadr.key.pub
+# exit 0 = valid, exit 1 = broken
+
+witnessadr export audit.db session-001 --out ./bundle --public-key witnessadr.key.pub
+# produces chain.json + public_key.b64 + VERIFICATION.md
+```
+
+---
+
+## ADR Schema (v1)
+
+Required fields: `adr_version` (const "1.0"), `id` (UUID v4), `sequence_number` (int), `timestamp` (ISO 8601), `session_id`, `agent_id`, `actor` (type: model/human/system), `decision_type` (enum), `input_context_hash` (sha256:hex), `action` (description + optional tool_name + parameters), `outcome`, `retention_class`, `entry_hash` (sha256:hex).
+
+Optional fields: `prev_hash` (null for first entry), `policy_checks` (array), `human_approval` (for EU AI Act Article 14), `input_context_ref`, `signature` (ed25519:base64).
+
+`decision_type` values: `tool_call`, `reasoning_step`, `policy_check`, `escalation`, `human_override`, `final_action`.
+
+`retention_class` values: `eu_ai_act_high_risk`, `finra_advice`, `hipaa`, `general`, `custom`.
+
+---
+
+## Hash Chain Design
+
+```
+entry_hash = "sha256:" + SHA256(canonicalize(entry) + (prev_hash or ""))
+```
+
+`canonicalize(entry)` is deterministic sorted-key JSON (UTF-8, no whitespace) excluding `entry_hash` and `signature`. The chain binding means:
+
+- Any field modification → entry_hash no longer matches recomputed hash → detected
+- Any entry deletion → sequence_number gap → detected
+- Any entry reordering → prev_hash mismatch → detected
+- Wrong signing key → signature verification fails → detected
+
+`verify_chain()` returns `VerificationResult(is_valid, total_entries, first_broken_index, broken_reason)` and stops at the first broken entry to pinpoint the tampered location.
+
+---
+
+## Redaction
+
+Default: `HashOnlyRedactor` — stores `{}` as context, only SHA-256 hash. Raw content is never persisted.
+
+Optional: `RegexPIIRedactor` — redacts email, phone, SSN, credit card patterns, stores scrubbed JSON.
+
+Custom: implement the `Redactor` protocol with `redact(raw_context: dict) -> tuple[dict, str]`.
+
+---
+
+## Human-in-the-Loop
+
+```python
+from witnessadr_storage_sqlite import record_human_approval
+
+record_human_approval(
+    store, session_id="session-001",
+    reviewed_decision_id=entry["id"],
+    approver_id="reviewer-jane",
+    decision="approved",  # or "rejected"
+)
+```
+
+Creates a `human_override` entry linked to the original decision. Satisfies EU AI Act Article 14.
+
+---
+
+## Compliance
+
+| Regime | Retention class | What WitnessADR helps with |
+|---|---|---|
+| EU AI Act (high-risk) | `eu_ai_act_high_risk` | Article 12 logging, Article 14 human oversight records, Article 18 retention metadata (10 years) |
+| FINRA Rule 4511 | `finra_advice` | 6-year records retention for AI-assisted financial advice |
+| HIPAA | `hipaa` | Audit controls for AI systems handling PHI |
+| SOC 2 Type II | `general` | Integrity and availability criteria evidence |
+
+WitnessADR tags entries; it does not enforce deletion/retention (that is a storage-layer concern).
+
+---
+
+## Packages
+
+| Package | PyPI name | Description |
+|---|---|---|
+| Core | `witnessadr-core` | Canonical serialization, hashing, signing, verification, redaction |
+| SQLite storage | `witnessadr-storage-sqlite` | `WitnessADRStore` (sync) + `AsyncWitnessADRStore` (aiosqlite) |
+| CLI | `witnessadr-cli` | `init`, `verify`, `export` commands |
+| LangChain adapter | `witnessadr-adapter-langchain` | `WitnessADRCallbackHandler` |
+| OpenAI adapter | `witnessadr-adapter-openai` | `WitnessADROpenAI` + `record_openai_tool_call` |
+
+---
+
+## License
+
+Apache 2.0. Source: https://github.com/witnessadr/witnessadr

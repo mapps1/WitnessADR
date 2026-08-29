@@ -1,0 +1,23 @@
+User-agent: *
+Allow: /
+
+# Explicitly allow AI crawlers (some hosting platforms restrict these by default)
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Anthropic-AI
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+Sitemap: https://witnessadr.github.io/witnessadr/sitemap.xml

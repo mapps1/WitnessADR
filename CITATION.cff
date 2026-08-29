@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use WitnessADR in research or a published system, please cite it as below."
+type: software
+title: "WitnessADR: Tamper-Evident Audit Trail for AI Agent Decisions"
+abstract: >
+  WitnessADR is an open-source Python library that records AI agent decisions
+  as a cryptographically hash-chained, Ed25519-signed Agent Decision Record (ADR)
+  that any third party can independently verify without trusting the system that
+  produced it. Designed to support EU AI Act, HIPAA, FINRA, and SOC 2 compliance
+  logging requirements.
+license: Apache-2.0
+repository-code: "https://github.com/witnessadr/witnessadr"
+url: "https://witnessadr.github.io/witnessadr/"
+version: "0.1.0"
+date-released: "2026-08-28"
+keywords:
+  - "AI agents"
+  - "audit trail"
+  - "tamper-evident logging"
+  - "compliance"
+  - "EU AI Act"
+  - "hash chain"
+  - "Ed25519"
+  - "LangChain"
+  - "agent decision record"

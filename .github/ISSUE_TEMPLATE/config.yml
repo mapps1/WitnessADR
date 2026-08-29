@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/witnessadr/witnessadr/security/advisories/new
+    about: "Report a security issue privately (do not open a public issue)"
+  - name: Question / Discussion
+    url: https://github.com/witnessadr/witnessadr/discussions
+    about: "Ask a question or start a discussion"
+  - name: FAQ
+    url: https://witnessadr.github.io/witnessadr/faq/
+    about: "Check the FAQ before opening an issue"

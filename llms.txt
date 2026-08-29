@@ -1,0 +1,42 @@
+# WitnessADR
+
+> WitnessADR is an open-source (Apache 2.0) Python library for tamper-evident AI agent decision logging. It records each consequential agent decision as a cryptographically hash-chained, Ed25519-signed Agent Decision Record (ADR) that any third party can independently verify with only read access — no vendor trust required.
+
+## Overview
+
+- [README](README.md) — Project overview, quick start, architecture, comparison with Langfuse/LangSmith/Kosmoy
+- [CHANGELOG](CHANGELOG.md) — Release history
+
+## Specification
+
+- [spec/spec.md](spec/spec.md) — Agent Decision Record schema specification, hash-chain design rationale, field reference
+- [spec/adr-schema-v1.json](spec/adr-schema-v1.json) — JSON Schema (draft 2020-12) for ADR v1
+
+## Getting Started
+
+- [docs/getting-started/installation.md](docs/getting-started/installation.md) — Installation for all packages
+- [docs/getting-started/quick-start.md](docs/getting-started/quick-start.md) — Full workflow: write, verify, export
+
+## Integration Guides
+
+- [docs/integration-guides/langchain.md](docs/integration-guides/langchain.md) — LangChain callback handler adapter
+- [docs/integration-guides/openai.md](docs/integration-guides/openai.md) — OpenAI SDK wrapper adapter
+- [docs/integration-guides/anthropic.md](docs/integration-guides/anthropic.md) — Anthropic manual recording (adapter planned)
+
+## FAQ
+
+- [docs/faq.md](docs/faq.md) — What is an ADR, compliance regimes, privacy, production readiness
+
+## Code
+
+- [packages/core/](packages/core/) — `witnessadr-core`: canonical serialization, hashing, signing, verification, redaction
+- [packages/storage_sqlite/](packages/storage_sqlite/) — `witnessadr-storage-sqlite`: SQLite store (sync + async)
+- [packages/cli/](packages/cli/) — `witnessadr` CLI: init / verify / export
+- [packages/adapter_langchain/](packages/adapter_langchain/) — LangChain callback handler
+- [packages/adapter_openai/](packages/adapter_openai/) — OpenAI SDK wrapper
+
+## Examples
+
+- [examples/raw_api_example.py](examples/raw_api_example.py) — Write entries, verify chain, demonstrate tamper detection
+- [examples/verify_and_export_example.py](examples/verify_and_export_example.py) — Export compliance bundle and verify it
+

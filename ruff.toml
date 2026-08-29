@@ -1,0 +1,9 @@
+[lint]
+select = ["E", "F", "W", "I"]
+ignore = [
+    "E501",   # line too long — not enforced
+]
+
+[lint.per-file-ignores]
+"tests/**" = ["F401"]
+"examples/**" = ["F401", "E402"]

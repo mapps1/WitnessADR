@@ -1,0 +1,20 @@
+# Root pyproject.toml — monorepo configuration.
+# This file is NOT an installable package. Install individual packages from packages/*.
+#
+# Development setup:
+#   pip install -e packages/core -e packages/storage_sqlite -e packages/cli \
+#               -e packages/adapter_openai -e "packages/adapter_langchain[langchain]"
+
+[tool.uv.workspace]
+members = ["packages/*"]
+
+[tool.uv.sources]
+witnessadr-core = { workspace = true }
+witnessadr-storage-sqlite = { workspace = true }
+witnessadr-cli = { workspace = true }
+witnessadr-adapter-langchain = { workspace = true }
+witnessadr-adapter-openai = { workspace = true }
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+addopts = "--import-mode=importlib"

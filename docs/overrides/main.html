@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block extrahead %}
+  {{ super() }}
+
+  {# SoftwareApplication JSON-LD structured data #}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "WitnessADR",
+    "description": "Tamper-evident audit trail for AI agent decisions — open-source, self-hosted, hash-chained, Ed25519-signed.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Linux, macOS, Windows",
+    "programmingLanguage": "Python",
+    "license": "https://www.apache.org/licenses/LICENSE-2.0",
+    "url": "https://github.com/witnessadr/witnessadr",
+    "downloadUrl": "https://pypi.org/project/witnessadr-core/",
+    "softwareVersion": "0.1.0",
+    "author": {
+      "@type": "Organization",
+      "name": "WitnessADR contributors",
+      "url": "https://github.com/witnessadr"
+    },
+    "keywords": [
+      "AI agent audit trail",
+      "agent decision logging",
+      "tamper-evident LLM logging",
+      "EU AI Act compliance logging",
+      "LangChain audit log",
+      "agent observability compliance"
+    ]
+  }
+  </script>
+
+  {# FAQPage JSON-LD on the FAQ page only #}
+  {% if page and page.file and page.file.src_path == "faq.md" %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What is an Agent Decision Record?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "An Agent Decision Record (ADR) is a single tamper-evident log entry recording one consequential decision made by an AI agent. Each entry is cryptographically linked to the previous one via a hash chain, making the full log independently verifiable by a third party."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How is WitnessADR different from LLM observability tools like Langfuse or LangSmith?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Langfuse and LangSmith are developer observability tools for debugging and tracing. WitnessADR is a compliance-evidence primitive that produces a cryptographically verifiable audit log an external auditor can independently check. The two are complementary."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does WitnessADR store my raw prompts or conversation data?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No, not by default. WitnessADR stores only the SHA-256 hash of the input context, not the content itself. Deployers can opt in to PII-scrubbed storage via the RegexPIIRedactor."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What compliance regimes does WitnessADR help with?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "WitnessADR supports the logging and traceability requirements in EU AI Act (Articles 12-19), FINRA Rule 4511, HIPAA audit controls, and SOC 2 Type II integrity criteria. It tags entries with retention_class but does not enforce deletion policy."
+        }
+      }
+    ]
+  }
+  </script>
+  {% endif %}
+{% endblock %}
